@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>InstaCMA — Professional CMA Reports in 60 Seconds</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--ink:#0a0a0a;--ink2:#3a3a3a;--muted:#888;--line:#e8e8e8;--bg:#fafaf8;--white:#fff;--accent:#0057FF;--green:#00C853;--warn:#FF9500;--card:#fff;--r:12px;--rl:20px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;line-height:1.15}
+a{text-decoration:none}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;background:rgba(250,250,248,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--ink);letter-spacing:-.5px}.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:1.5rem;align-items:center}
+.nav-links a{font-size:.875rem;color:var(--ink2);font-weight:400}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{background:var(--ink);color:#fff!important;padding:8px 20px;border-radius:100px;font-weight:500!important;transition:background .2s}
+.nav-cta:hover{background:var(--accent)!important}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7rem 2rem 4rem;background:linear-gradient(160deg,#f0f4ff 0%,#fafaf8 50%,#f0fff4 100%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:700px;height:700px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,87,255,.07) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,87,255,.08);border:1px solid rgba(0,87,255,.2);color:var(--accent);font-size:.78rem;font-weight:500;letter-spacing:.5px;padding:5px 14px;border-radius:100px;margin-bottom:1.25rem;animation:fadeUp .5s ease both}
+.hero h1{font-size:clamp(2.6rem,5.5vw,4.8rem);font-weight:800;letter-spacing:-2px;color:var(--ink);max-width:800px;margin-bottom:1.1rem;animation:fadeUp .5s .1s ease both}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:1.1rem;color:var(--ink2);max-width:500px;margin-bottom:2.25rem;font-weight:300;animation:fadeUp .5s .2s ease both}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp .5s .3s ease both}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:13px 30px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:500;cursor:pointer;transition:transform .15s,box-shadow .15s;display:inline-block;box-shadow:0 4px 24px rgba(0,87,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,87,255,.35)}
+.btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);padding:13px 30px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:500;cursor:pointer;transition:border-color .15s;display:inline-block}
+.btn-secondary:hover{border-color:var(--ink)}
+.stats-row{display:flex;gap:3rem;margin-top:3.5rem;flex-wrap:wrap;justify-content:center;animation:fadeUp .5s .4s ease both}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;color:var(--ink)}
+.stat-lbl{font-size:.82rem;color:var(--muted)}
+
+/* PROOF BANNER */
+.proof-banner{background:var(--ink);padding:1rem 2rem;text-align:center}
+.proof-banner p{font-size:.875rem;color:#fff;font-weight:400}
+.proof-banner strong{color:var(--green)}
+
+/* SECTIONS */
+.section{padding:5rem 2rem;max-width:1080px;margin:0 auto}
+.section-label{font-size:.78rem;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.section-title{font-size:clamp(1.7rem,2.8vw,2.4rem);font-weight:700;letter-spacing:-1px;color:var(--ink);margin-bottom:2.5rem;max-width:480px}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.25rem}
+.feature-card{background:var(--white);border:1px solid var(--line);border-radius:var(--rl);padding:1.6rem;transition:border-color .2s,transform .2s}
+.feature-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.feature-icon{width:42px;height:42px;border-radius:11px;background:rgba(0,87,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:.9rem}
+.feature-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem}
+.feature-desc{font-size:.875rem;color:var(--ink2);line-height:1.65}
+
+/* VALIDATION */
+.val-section{background:var(--ink);padding:5rem 2rem}
+.val-inner{max-width:900px;margin:0 auto;text-align:center}
+.val-inner .section-label{color:var(--green)}
+.val-inner .section-title{color:#fff;margin:0 auto 2.5rem}
+.val-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem}
+.val-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:var(--rl);padding:1.5rem;text-align:left}
+.val-addr{font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.75rem;line-height:1.5}
+.val-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem}
+.val-key{font-size:.8rem;color:rgba(255,255,255,.5)}
+.val-val{font-size:.9rem;color:#fff;font-weight:500}
+.val-variance{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--green);margin-top:.75rem}
+.val-var-lbl{font-size:.75rem;color:rgba(255,255,255,.5)}
+
+/* PRICING */
+.pricing-section{background:var(--bg);padding:5rem 2rem}
+.pricing-inner{max-width:860px;margin:0 auto;text-align:center}
+.pricing-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-top:2.5rem}
+.pricing-card{background:var(--white);border:1px solid var(--line);border-radius:var(--rl);padding:1.75rem;text-align:left;transition:border-color .2s}
+.pricing-card.featured{background:var(--accent);border-color:var(--accent)}
+.plan-name{font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem}
+.pricing-card.featured .plan-name{color:rgba(255,255,255,.7)}
+.plan-price{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:var(--ink);margin-bottom:.2rem}
+.pricing-card.featured .plan-price{color:#fff}
+.plan-period{font-size:.82rem;color:var(--muted);margin-bottom:1.25rem}
+.pricing-card.featured .plan-period{color:rgba(255,255,255,.6)}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem}
+.plan-features li{font-size:.875rem;color:var(--ink2);display:flex;align-items:center;gap:7px}
+.plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.pricing-card.featured .plan-features li{color:rgba(255,255,255,.85)}
+.plan-btn{width:100%;padding:11px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;border:1.5px solid var(--line);background:transparent;color:var(--ink);transition:background .2s,border-color .2s}
+.plan-btn:hover{background:rgba(0,0,0,.05)}
+.pricing-card.featured .plan-btn{background:#fff;color:var(--accent);border-color:#fff}
+.pricing-card.featured .plan-btn:hover{background:rgba(255,255,255,.9)}
+
+/* TOOL */
+.tool-section{padding:5rem 2rem;max-width:940px;margin:0 auto}
+.tool-wrapper{background:var(--white);border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.tool-tabs{display:flex;border-bottom:1px solid var(--line)}
+.tool-tab{flex:1;padding:.9rem .5rem;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;transition:color .2s,border-color .2s}
+.tool-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tool-body{padding:1.75rem}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.form-full{grid-column:span 2}
+.form-group{display:flex;flex-direction:column;gap:4px}
+label{font-size:.78rem;font-weight:500;color:var(--ink2);letter-spacing:.3px}
+input[type=text],input[type=number],input[type=email],input[type=tel],select,textarea{border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:'DM Sans',sans-serif;font-size:.875rem;color:var(--ink);background:var(--bg);transition:border-color .2s;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff}
+textarea{resize:vertical}
+.drop-zone{border:2px dashed var(--line);border-radius:var(--r);padding:2.25rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.drop-zone:hover{border-color:var(--accent);background:rgba(0,87,255,.02)}
+.drop-zone-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;color:var(--ink);margin-bottom:.2rem}
+.drop-zone-sub{font-size:.78rem;color:var(--muted)}
+.file-loaded{display:none;background:rgba(0,200,83,.06);border:1.5px solid rgba(0,200,83,.3);border-radius:var(--r);padding:.9rem 1.1rem}
+.file-loaded-inner{display:flex;align-items:center;gap:9px}
+.file-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+.metric-box{background:var(--bg);border-radius:var(--r);padding:.9rem;text-align:center}
+.metric-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)}
+.metric-lbl{font-size:.72rem;color:var(--muted);margin-top:2px}
+.color-row{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
+.color-opt{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.color-swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;transition:transform .15s}
+.color-opt.selected .color-swatch{border-color:var(--ink);transform:scale(1.15)}
+.color-lbl{font-size:.68rem;color:var(--muted)}
+input[type=color]{width:34px;height:34px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none}
+.run-btn{width:100%;padding:13px;border-radius:100px;background:var(--accent);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:1.25rem;box-shadow:0 4px 20px rgba(0,87,255,.2);letter-spacing:.3px}
+.run-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,87,255,.3)}
+.run-btn:disabled{background:var(--muted);cursor:not-allowed;transform:none;box-shadow:none}
+#result-area{display:none;margin-top:1.75rem}
+.price-range-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+.price-box{border-radius:var(--r);padding:1.1rem;text-align:center}
+.price-box.low{background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.2)}
+.price-box.target{background:rgba(0,87,255,.08);border:1px solid rgba(0,87,255,.25)}
+.price-box.high{background:rgba(0,200,83,.08);border:1px solid rgba(0,200,83,.25)}
+.price-num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800}
+.price-box.low .price-num{color:var(--warn)}
+.price-box.target .price-num{color:var(--accent)}
+.price-box.high .price-num{color:var(--green)}
+.price-lbl-s{font-size:.72rem;color:var(--muted);margin-top:2px}
+.report-body{background:var(--bg);border-radius:var(--r);padding:1.25rem;font-size:.875rem;line-height:1.8;white-space:pre-wrap;color:var(--ink2);max-height:460px;overflow-y:auto}
+.report-actions{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap}
+.dl-btn{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:#fff;border:none;padding:10px 22px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .2s}
+.dl-btn:hover{background:var(--accent)}
+.brand-upload{border:2px dashed var(--line);border-radius:var(--r);padding:1.4rem;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:.9rem}
+.brand-upload:hover{border-color:var(--accent)}
+.brand-preview{display:none;width:72px;height:72px;object-fit:contain;margin:0 auto .4rem;border-radius:8px;border:1px solid var(--line)}
+.status-bar{display:none;border-radius:var(--r);padding:9px 13px;margin-bottom:.9rem;font-size:.82rem}
+.status-ok{background:rgba(0,200,83,.08);color:#1a7a40;border:1px solid rgba(0,200,83,.3)}
+.status-err{background:rgba(255,59,48,.08);color:#c0392b;border:1px solid rgba(255,59,48,.2)}
+
+/* FOOTER */
+footer{padding:2.5rem 2rem;border-top:1px solid var(--line);text-align:center}
+footer p{font-size:.82rem;color:var(--muted)}
+footer strong{color:var(--ink);font-family:'Syne',sans-serif}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.spinner{width:44px;height:44px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+.dot-pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s ease infinite}
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr}.form-full{grid-column:span 1}
+  .metric-row,.price-range-row{grid-template-columns:1fr}
+  nav{padding:0 1rem}.nav-links{display:none}
+  .tool-body{padding:1rem}
+  .tool-tab{font-size:.7rem;padding:.75rem .25rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo">Insta<span>CMA</span></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#validation">Proof</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#tool" class="nav-cta">Try free →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">✦ Built for Upstate SC listing agents</div>
+  <h1>Win more listings with a <em>CMA that closes.</em></h1>
+  <p>Upload your Paragon export, add your branding, and get a professional CMA report in 60 seconds.</p>
+  <div class="hero-btns">
+    <a href="#tool" class="btn-primary">Generate your first CMA free</a>
+    <a href="#validation" class="btn-secondary">See the proof</a>
+  </div>
+  <div class="stats-row">
+    <div><div class="stat-num">60s</div><div class="stat-lbl">Average report time</div></div>
+    <div><div class="stat-num">&lt;5%</div><div class="stat-lbl">Avg variance vs appraisals</div></div>
+    <div><div class="stat-num">100%</div><div class="stat-lbl">Your branding</div></div>
+  </div>
+</section>
+
+<!-- PROOF BANNER -->
+<div class="proof-banner">
+  <p>Tested against certified residential appraisals and real MLS closed sales — <strong>average variance under 2%</strong> — Greenville MLS · Upstate SC</p>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Why agents use it</div>
+  <div class="section-title">Everything you need at the listing appointment.</div>
+  <div class="features-grid">
+    <div class="feature-card"><div class="feature-icon">📂</div><div class="feature-title">Works with Paragon</div><div class="feature-desc">Export your sold comps as CSV from Paragon and upload. InstaCMA reads every column automatically — sold price, DOM, concessions, sq ft, everything.</div></div>
+    <div class="feature-card"><div class="feature-icon">🤖</div><div class="feature-title">Appraiser-grade AI</div><div class="feature-desc">The AI screens comps, flags outliers, applies size and condition adjustments, and reconciles to a defensible price range — the same logic a licensed appraiser uses.</div></div>
+    <div class="feature-card"><div class="feature-icon">🎨</div><div class="feature-title">Your brand on every report</div><div class="feature-desc">Add your logo, headshot, brand color, name, title, phone, and email. Every PDF looks like it came from your own marketing team.</div></div>
+    <div class="feature-card"><div class="feature-icon">📄</div><div class="feature-title">Print-ready PDF</div><div class="feature-desc">Download a polished, branded CMA report in one click. Hand it to the seller, email it, or present it on your screen at the listing appointment.</div></div>
+    <div class="feature-card"><div class="feature-icon">⚡</div><div class="feature-title">60 seconds start to finish</div><div class="feature-desc">No manual data entry. No formatting. No copying and pasting. Fill in the subject property, upload your comps, and you're done.</div></div>
+    <div class="feature-card"><div class="feature-icon">🏆</div><div class="feature-title">Win the listing</div><div class="feature-desc">Show up with a report that looks better than any other agent in the room. Professional presentation wins listings — period.</div></div>
+  </div>
+</section>
+
+<!-- VALIDATION -->
+<section class="val-section" id="validation">
+  <div class="val-inner">
+    <div class="section-label">Validated accuracy</div>
+    <div class="section-title">Tested against real appraisals.</div>
+    <div class="val-cards">
+      <div class="val-card">
+        <div class="val-addr">Single-family home<br>Easley, SC · Pickens County</div>
+        <div class="val-row"><span class="val-key">InstaCMA price</span><span class="val-val">$275,000</span></div>
+        <div class="val-row"><span class="val-key">Certified appraisal</span><span class="val-val">$281,000</span></div>
+        <div class="val-row"><span class="val-key">Data source</span><span class="val-val">USPAP-compliant appraisal</span></div>
+        <div class="val-variance">2.1%</div>
+        <div class="val-var-lbl">variance from certified appraisal</div>
+      </div>
+      <div class="val-card">
+        <div class="val-addr">Single-family home<br>Greer, SC · Area 022</div>
+        <div class="val-row"><span class="val-key">InstaCMA price</span><span class="val-val">$350,000</span></div>
+        <div class="val-row"><span class="val-key">Actual sold price</span><span class="val-val">$345,000</span></div>
+        <div class="val-row"><span class="val-key">List price match</span><span class="val-val">Exact</span></div>
+        <div class="val-variance">1.4%</div>
+        <div class="val-var-lbl">variance from actual sold price</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label">Simple pricing</div>
+    <div class="section-title" style="margin:0 auto .75rem">Start free. Upgrade when you're ready.</div>
+    <p style="font-size:.9rem;color:var(--muted)">No credit card required to start.</p>
+    <div class="pricing-cards">
+      <div class="pricing-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">Free</div>
+        <div class="plan-period">forever</div>
+        <ul class="plan-features">
+          <li>3 CMA reports/month</li>
+          <li>AI comp analysis</li>
+          <li>PDF export</li>
+          <li>Basic branding</li>
+        </ul>
+        <button class="plan-btn" onclick="document.getElementById('tool').scrollIntoView({behavior:'smooth'})">Get started free</button>
+      </div>
+      <div class="pricing-card featured">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$39</div>
+        <div class="plan-period">per month · 14-day free trial</div>
+        <ul class="plan-features">
+          <li>Unlimited CMA reports</li>
+          <li>Full custom branding</li>
+          <li>Logo + headshot + colors</li>
+          <li>Priority AI analysis</li>
+          <li>Saved report history</li>
+          <li>Email support</li>
+        </ul>
+        <button class="plan-btn">Start free trial</button>
+      </div>
+      <div class="pricing-card">
+        <div class="plan-name">Team</div>
+        <div class="plan-price">$99</div>
+        <div class="plan-period">per month</div>
+        <ul class="plan-features">
+          <li>Up to 5 agents</li>
+          <li>Team branding templates</li>
+          <li>Broker dashboard</li>
+          <li>All Pro features</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="plan-btn" onclick="location.href='mailto:hello@instacma.com'">Contact us</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL -->
+<section class="tool-section" id="tool">
+  <div class="section-label">Free CMA generator</div>
+  <div class="section-title">Try it now — no signup needed.</div>
+
+  <div class="tool-wrapper">
+    <div class="tool-tabs">
+      <button class="tool-tab active" onclick="switchTab('howto',this)">📋 How-To</button>
+      <button class="tool-tab" onclick="switchTab('subject',this)">1. Subject Property</button>
+      <button class="tool-tab" onclick="switchTab('comps',this)">2. Upload Comps</button>
+      <button class="tool-tab" onclick="switchTab('brand',this)">3. Branding</button>
+      <button class="tool-tab" onclick="switchTab('generate',this)">4. Generate</button>
+    </div>
+    <div class="tool-body">
+
+      <!-- HOW-TO -->
+      <div class="tab-panel active" id="tab-howto">
+        <div style="max-width:680px">
+          <p style="font-size:.95rem;font-weight:500;color:var(--ink);margin-bottom:1.25rem">Follow these steps every time you run a CMA. Takes about 3 minutes from Paragon to finished report.</p>
+
+          <!-- STEP 1 -->
+          <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">1</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Set up your Paragon search</div>
+              <p style="font-size:.875rem;color:var(--ink2);line-height:1.7;margin-bottom:.5rem">In Paragon, go to <strong>Search → Residential</strong>. Set the following criteria:</p>
+              <ul style="font-size:.875rem;color:var(--ink2);line-height:1.9;padding-left:1.1rem">
+                <li><strong>Status:</strong> SLD (Sold)</li>
+                <li><strong>Search By Map:</strong> Draw a <strong>1-mile radius</strong> around the subject property address</li>
+                <li><strong>General Date (Begin):</strong> Set to <strong>1 year back</strong> from today — leave End blank</li>
+                <li>Leave all other fields blank — let the AI filter the rest</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">2</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Add the required columns via Customize</div>
+              <p style="font-size:.875rem;color:var(--ink2);line-height:1.7;margin-bottom:.6rem">After running the search, click <strong>Customize</strong> in the results toolbar. Make sure these columns are visible before exporting:</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem .75rem;margin-top:.25rem">
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Address</span><br><span style="color:var(--muted)">Required — property location</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">City</span><br><span style="color:var(--muted)">Required — market context</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">List Price</span><br><span style="color:var(--muted)">Required — list-to-sold ratio</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)"># BR / # FB</span><br><span style="color:var(--muted)">Required — bed/bath adjustments</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Approx Year Built</span><br><span style="color:var(--muted)">Required — age adjustments</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Total Sq Ft</span><br><span style="color:var(--muted)">Required — size range display</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Total Finished Sqft</span><br><span style="color:var(--muted)">Required — actual sq ft for $/sqft</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Days On Market</span><br><span style="color:var(--muted)">Required — market activity flag</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Lot Size / Acreage</span><br><span style="color:var(--muted)">Required — lot adjustments</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Sold Price ✅</span><br><span style="color:var(--muted)">Most important — actual closed price</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Sold Price Per SQFT</span><br><span style="color:var(--muted)">Required — cross-check $/sqft</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Closing Date</span><br><span style="color:var(--muted)">Required — time adjustments</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Subdivision</span><br><span style="color:var(--muted)">Required — location context</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Garage Total Capacity</span><br><span style="color:var(--muted)">Required — garage adjustments</span></div>
+                <div style="font-size:.8rem"><span style="font-weight:500;color:var(--ink)">Seller Concessions</span><br><span style="color:var(--muted)">Helpful — flags unusual sales</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">3</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Export as CSV</div>
+              <p style="font-size:.875rem;color:var(--ink2);line-height:1.7">Click <strong>Export → CSV</strong> from the results toolbar. Save the file to your desktop. This is the file you upload in Step 2 of the CMA tool.</p>
+            </div>
+          </div>
+
+          <!-- STEP 4 -->
+          <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">4</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Fill in the subject property</div>
+              <p style="font-size:.875rem;color:var(--ink2);line-height:1.7">Go to the <strong>Subject Property tab</strong>. The most important field is <strong>Total Finished Sq Ft</strong> — always use the confirmed actual sq ft, not the public record (they often differ). Add condition, garage count, and any recent upgrades.</p>
+            </div>
+          </div>
+
+          <!-- STEP 5 -->
+          <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">5</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Generate and download your report</div>
+              <p style="font-size:.875rem;color:var(--ink2);line-height:1.7">Upload your CSV, add your branding, then hit <strong>Generate CMA Report</strong>. The AI will analyze all comps, flag outliers, apply adjustments, and return a full report. Download the branded PDF and you're ready for your listing appointment.</p>
+            </div>
+          </div>
+
+          <!-- PRO TIP -->
+          <div style="padding:1rem 1.1rem;background:rgba(0,87,255,.06);border:1px solid rgba(0,87,255,.15);border-radius:var(--r)">
+            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.35rem">💡 Pro tip — why 1 year?</div>
+            <p style="font-size:.84rem;color:var(--ink2);line-height:1.7">Use a 1-year lookback and let the AI sort it out. The robot automatically flags comps older than 6 months and applies time adjustments — but having that older data available is better than having too few comps. More data = better accuracy.</p>
+          </div>
+
+          <button class="run-btn" style="margin-top:1.25rem" onclick="switchTab('subject',document.querySelectorAll('.tool-tab')[1])">Got it — start my CMA →</button>
+        </div>
+      </div>
+
+      <!-- SUBJECT -->
+      <div class="tab-panel" id="tab-subject">
+        <div class="form-grid">
+          <div class="form-group form-full"><label>Property address</label><input id="s-addr" type="text" placeholder="Street address, City, SC"/></div>
+          <div class="form-group"><label>Total finished sq ft (actual)</label><input id="s-sqft" type="number" placeholder="Confirmed sq ft"/></div>
+          <div class="form-group"><label>Beds / full baths</label><input id="s-beds" type="text" placeholder="e.g. 3 / 2"/></div>
+          <div class="form-group"><label>Year built</label><input id="s-year" type="number" placeholder="e.g. 2005"/></div>
+          <div class="form-group"><label>Condition</label>
+            <select id="s-cond">
+              <option value="">Select...</option>
+              <option>As-is / needs work</option>
+              <option>Average / original</option>
+              <option>Good / updated</option>
+              <option>Fully renovated</option>
+              <option>New construction</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Lot size</label><input id="s-lot" type="text" placeholder="e.g. 0.39 acres"/></div>
+          <div class="form-group"><label>Garage spaces</label><input id="s-garage" type="text" placeholder="e.g. 0, 1, 2"/></div>
+          <div class="form-group form-full"><label>Upgrades / renovations</label><input id="s-upgrades" type="text" placeholder="e.g. new roof, LVP floors, updated kitchen, new HVAC"/></div>
+          <div class="form-group form-full"><label>Additional notes for AI</label><textarea id="s-notes" rows="2" placeholder="e.g. no HOA, busy road, backs to woods, Riverside schools..."></textarea></div>
+        </div>
+        <button class="run-btn" style="margin-top:1rem" onclick="switchTab('comps',document.querySelectorAll('.tool-tab')[1])">Next: Upload Comps →</button>
+      </div>
+
+      <!-- COMPS -->
+      <div class="tab-panel" id="tab-comps">
+        <div id="status-bar" class="status-bar"></div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-inp').click()">
+          <div style="font-size:1.75rem;margin-bottom:.5rem">📁</div>
+          <div class="drop-zone-title">Upload your Paragon export</div>
+          <div class="drop-zone-sub">Accepts .csv or .xlsx · Needs: Sold Price, Total Finished Sqft, Days On Market, Closing Date</div>
+        </div>
+        <input type="file" id="file-inp" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])"/>
+        <div class="file-loaded" id="file-loaded">
+          <div class="file-loaded-inner">
+            <div class="file-dot"></div>
+            <div><div style="font-size:.875rem;font-weight:500" id="file-name">file.csv</div><div style="font-size:.78rem;color:var(--muted)" id="file-count">0 comps</div></div>
+            <button onclick="clearFile()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:.82rem">✕</button>
+          </div>
+        </div>
+        <div id="comp-preview-area" style="display:none;margin-top:1.25rem">
+          <div class="metric-row" id="comp-metrics"></div>
+          <div style="overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)">
+            <table style="width:100%;border-collapse:collapse;font-size:.78rem;white-space:nowrap">
+              <thead id="ct-head"></thead><tbody id="ct-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <button class="run-btn" style="margin-top:1.25rem" onclick="switchTab('brand',document.querySelectorAll('.tool-tab')[2])">Next: Add Branding →</button>
+      </div>
+
+      <!-- BRAND -->
+      <div class="tab-panel" id="tab-brand">
+        <div class="form-grid">
+          <div class="form-group form-full"><label>Your name</label><input id="b-name" type="text" placeholder="Your full name"/></div>
+          <div class="form-group"><label>Title</label><input id="b-title" type="text" placeholder="e.g. REALTOR® | ABC Realty"/></div>
+          <div class="form-group"><label>Phone</label><input id="b-phone" type="tel" placeholder="Your phone number"/></div>
+          <div class="form-group form-full"><label>Email</label><input id="b-email" type="email" placeholder="Your email address"/></div>
+          <div class="form-group"><label>Brokerage</label><input id="b-co" type="text" placeholder="Your brokerage name"/></div>
+          <div class="form-group"><label>Website</label><input id="b-web" type="text" placeholder="Your website (optional)"/></div>
+          <div class="form-group form-full">
+            <label>Logo (optional)</label>
+            <div class="brand-upload" onclick="document.getElementById('logo-inp').click()">
+              <img id="logo-prev" class="brand-preview" src="" alt=""/>
+              <div style="font-size:.82rem;color:var(--muted)" id="logo-placeholder">Click to upload logo (PNG or JPG)</div>
+            </div>
+            <input type="file" id="logo-inp" accept="image/*" style="display:none" onchange="handleLogo(this.files[0])"/>
+          </div>
+          <div class="form-group form-full">
+            <label>Brand color</label>
+            <div class="color-row" id="color-row">
+              <div class="color-opt selected" data-color="#0057FF" onclick="setColor(this)"><div class="color-swatch" style="background:#0057FF"></div><div class="color-lbl">Blue</div></div>
+              <div class="color-opt" data-color="#1B4F72" onclick="setColor(this)"><div class="color-swatch" style="background:#1B4F72"></div><div class="color-lbl">Navy</div></div>
+              <div class="color-opt" data-color="#C0392B" onclick="setColor(this)"><div class="color-swatch" style="background:#C0392B"></div><div class="color-lbl">Red</div></div>
+              <div class="color-opt" data-color="#1E8449" onclick="setColor(this)"><div class="color-swatch" style="background:#1E8449"></div><div class="color-lbl">Green</div></div>
+              <div class="color-opt" data-color="#7D3C98" onclick="setColor(this)"><div class="color-swatch" style="background:#7D3C98"></div><div class="color-lbl">Purple</div></div>
+              <div class="color-opt" data-color="#E67E22" onclick="setColor(this)"><div class="color-swatch" style="background:#E67E22"></div><div class="color-lbl">Orange</div></div>
+              <div class="color-opt" data-color="custom" onclick="document.getElementById('custom-c').click()">
+                <input type="color" id="custom-c" value="#0057FF" oninput="setCustomColor(this.value)" style="display:block"/>
+                <div class="color-lbl">Custom</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="run-btn" style="margin-top:1rem" onclick="switchTab('generate',document.querySelectorAll('.tool-tab')[3])">Next: Generate CMA →</button>
+      </div>
+
+      <!-- GENERATE -->
+      <div class="tab-panel" id="tab-generate">
+        <div id="pre-gen">
+          <div style="background:var(--bg);border-radius:var(--r);padding:1.25rem;margin-bottom:1.25rem">
+            <div style="font-family:'Syne',sans-serif;font-size:.875rem;font-weight:700;margin-bottom:.75rem;color:var(--ink)">Summary</div>
+            <div id="summary-disp" style="font-size:.875rem;color:var(--ink2);line-height:1.8"></div>
+          </div>
+          <button class="run-btn" id="run-btn" onclick="runCMA()">Generate CMA Report ↗</button>
+        </div>
+        <div id="result-area" style="display:none">
+          <div style="background:rgba(0,200,83,.06);border:1px solid rgba(0,200,83,.25);border-radius:var(--r);padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem">
+            <div style="font-size:1.2rem">✅</div>
+            <div>
+              <div style="font-size:.875rem;font-weight:500;color:var(--ink)">CMA complete — scroll down in the chat to read the full report</div>
+              <div style="font-size:.78rem;color:var(--muted);margin-top:2px">Come back here to download your branded PDF once you've reviewed it.</div>
+            </div>
+          </div>
+          <div class="report-actions">
+            <button class="dl-btn" onclick="downloadPDF()">⬇ Download branded PDF</button>
+            <button class="dl-btn" style="background:var(--bg);color:var(--ink);border:1.5px solid var(--line)" onclick="resetTool()">↩ New CMA</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LOADING OVERLAY — lives outside tabs so always visible -->
+    <div id="loading-state" style="display:none;text-align:center;padding:2.5rem 1rem;border-top:1px solid var(--line)">
+      <div style="margin-bottom:1.25rem"><div class="spinner"></div></div>
+      <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:.5rem" id="loading-msg">Sending comps to appraiser engine...</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto" id="loading-sub">The AI is analyzing your comps, screening outliers, and calculating adjustments. This takes 15–30 seconds.</div>
+      <div style="margin-top:1.25rem;display:flex;justify-content:center;gap:.4rem">
+        <div class="dot-pulse" style="animation-delay:0s"></div>
+        <div class="dot-pulse" style="animation-delay:.2s"></div>
+        <div class="dot-pulse" style="animation-delay:.4s"></div>
+      </div>
+      <div style="margin-top:1rem;font-size:.78rem;color:var(--muted)">Elapsed: <span id="elapsed-time">0</span>s</div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p><strong>InstaCMA</strong> — Professional CMA Reports for Listing Agents</p>
+  <p style="margin-top:.4rem">Questions? <a href="mailto:hello@instacma.com" style="color:var(--accent)">hello@instacma.com</a></p>
+</footer>
+
+<script>
+let parsedComps=[],logoDataUrl='',brandColor='#0057FF',lastReport='',lastSubject={};
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='generate')updateSummary();
+}
+
+function pNum(v){return parseFloat(String(v||'').replace(/[^0-9.]/g,''))||0;}
+
+function setBar(msg,ok){
+  const b=document.getElementById('status-bar');
+  b.style.display=msg?'block':'none';
+  b.textContent=msg;
+  b.className='status-bar '+(ok?'status-ok':'status-err');
+}
+
+function handleFile(file){
+  if(!file)return;
+  const isCSV=file.name.toLowerCase().endsWith('.csv');
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=isCSV?XLSX.read(e.target.result,{type:'string'}):XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length){setBar('No data found in file.',false);return;}
+      parsedComps=rows;
+      showFileLoaded(file.name,rows);
+      checkQuality(rows);
+    }catch(err){setBar('Error: '+err.message,false);}
+  };
+  isCSV?reader.readAsText(file):reader.readAsArrayBuffer(file);
+}
+
+function showFileLoaded(name,rows){
+  document.getElementById('drop-zone').style.display='none';
+  const fl=document.getElementById('file-loaded');
+  fl.style.display='block';
+  document.getElementById('file-name').textContent=name;
+  document.getElementById('file-count').textContent=rows.length+' comps loaded';
+  const keys=Object.keys(rows[0]);
+  const sk=k=>keys.find(x=>x.toLowerCase().includes(k.toLowerCase()));
+  const priceK=sk('sold price')&&!sk('per')?sk('sold price'):keys.find(k=>/sold.price$/i.test(k));
+  const sqftK=keys.find(k=>/total.finished/i.test(k));
+  const prices=priceK?rows.map(r=>pNum(r[priceK])).filter(v=>v>10000):[];
+  const sqfts=sqftK?rows.map(r=>pNum(r[sqftK])).filter(v=>v>100):[];
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const ppsfs=prices.map((p,i)=>sqfts[i]?p/sqfts[i]:null).filter(Boolean);
+  document.getElementById('comp-metrics').innerHTML=
+    `<div class="metric-box"><div class="metric-val">${rows.length}</div><div class="metric-lbl">Comps</div></div>`+
+    (prices.length?`<div class="metric-box"><div class="metric-val">$${Math.round(avg(prices)/1000)}K</div><div class="metric-lbl">Avg sold</div></div>`:'')+
+    (ppsfs.length?`<div class="metric-box"><div class="metric-val">$${Math.round(avg(ppsfs))}/ft²</div><div class="metric-lbl">Avg $/sq ft</div></div>`:'');
+  const wantCols=['Address','Sold Price','Sold Price Per SQFT','Total Finished Sqft','Days On Market','Closing Date','Subdivision','Garage Total Capacity','Seller Concessions'];
+  const finalKeys=wantCols.map(w=>keys.find(k=>k.toLowerCase().includes(w.toLowerCase()))).filter(Boolean);
+  const showKeys=finalKeys.length>=4?finalKeys:keys.slice(0,6);
+  document.getElementById('ct-head').innerHTML=`<tr>${showKeys.map(k=>`<th style="padding:6px 9px;text-align:left;font-size:.72rem;font-weight:500;color:var(--muted);border-bottom:1px solid var(--line);background:var(--bg)">${k}</th>`).join('')}</tr>`;
+  document.getElementById('ct-body').innerHTML=rows.slice(0,10).map((r,i)=>`<tr style="background:${i%2===0?'#fff':'var(--bg)'}">${showKeys.map(k=>`<td style="padding:5px 9px;overflow:hidden;text-overflow:ellipsis;max-width:150px" title="${r[k]||''}">${r[k]||''}</td>`).join('')}</tr>`).join('');
+  document.getElementById('comp-preview-area').style.display='block';
+}
+
+function checkQuality(rows){
+  const keys=Object.keys(rows[0]).map(k=>k.toLowerCase());
+  const missing=[
+    {l:'Sold Price',t:k=>/sold.price$/.test(k)&&!/per/.test(k)},
+    {l:'Sold $/SqFt',t:k=>/sold.price.per/.test(k)},
+    {l:'Finished Sqft',t:k=>/total.finished/.test(k)},
+    {l:'Days on Market',t:k=>/days.on/.test(k)},
+    {l:'Closing Date',t:k=>/closing.date/.test(k)},
+  ].filter(c=>!keys.some(c.t)).map(c=>c.l);
+  if(missing.length)setBar('⚠ Missing: '+missing.join(', ')+' — re-export from Paragon with Customize.',false);
+  else setBar('✓ All appraisal fields detected — full analysis ready.',true);
+}
+
+function clearFile(){
+  parsedComps=[];
+  document.getElementById('drop-zone').style.display='block';
+  document.getElementById('file-loaded').style.display='none';
+  document.getElementById('comp-preview-area').style.display='none';
+  document.getElementById('file-inp').value='';
+  setBar('',true);
+}
+
+function handleLogo(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    logoDataUrl=e.target.result;
+    const prev=document.getElementById('logo-prev');
+    prev.src=logoDataUrl;prev.style.display='block';
+    document.getElementById('logo-placeholder').textContent='Click to change logo';
+  };
+  reader.readAsDataURL(file);
+}
+
+function setColor(el){
+  document.querySelectorAll('.color-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  brandColor=el.dataset.color;
+}
+function setCustomColor(v){
+  brandColor=v;
+  document.querySelectorAll('.color-opt').forEach(o=>o.classList.remove('selected'));
+}
+
+function updateSummary(){
+  const addr=document.getElementById('s-addr').value||'Not entered';
+  const sqft=document.getElementById('s-sqft').value||'—';
+  const beds=document.getElementById('s-beds').value||'—';
+  const cond=document.getElementById('s-cond').value||'—';
+  const agent=document.getElementById('b-name').value||'Not entered';
+  document.getElementById('summary-disp').innerHTML=
+    `<b>Property:</b> ${addr}<br><b>Size:</b> ${sqft} sq ft &nbsp;|&nbsp; <b>Beds/Baths:</b> ${beds} &nbsp;|&nbsp; <b>Condition:</b> ${cond}<br><b>Comps loaded:</b> ${parsedComps.length}<br><b>Agent:</b> ${agent}`;
+}
+
+function runCMA(){
+  const addr=document.getElementById('s-addr').value.trim();
+  if(!addr){alert('Please enter the subject property address.');return;}
+  if(!parsedComps.length){alert('Please upload your Paragon export in Step 2.');return;}
+  const s={
+    address:addr,sqft:document.getElementById('s-sqft').value,
+    beds:document.getElementById('s-beds').value,year:document.getElementById('s-year').value,
+    condition:document.getElementById('s-cond').value,lot:document.getElementById('s-lot').value,
+    garage:document.getElementById('s-garage').value,
+    upgrades:document.getElementById('s-upgrades').value,notes:document.getElementById('s-notes').value
+  };
+  lastSubject=s;
+
+  // Hide tabs + tool body, show loading overlay (which is outside the tab system)
+  document.querySelector('.tool-tabs').style.display='none';
+  document.querySelector('.tool-body').style.display='none';
+  document.getElementById('loading-state').style.display='block';
+
+  const compText=parsedComps.slice(0,43).map((r,i)=>{
+    const keys=Object.keys(r);
+    const want=['Address','City','Sold Price','List Price','Sold Price Per SQFT','Total Finished Sqft','# BR','# FB','Days On Market','Closing Date','Approx Year Built','Subdivision','Garage Total Capacity','Lot Size/Acreage'];
+    return `Comp ${i+1}: `+want.map(w=>{const k=keys.find(k=>k.toLowerCase().includes(w.toLowerCase()));return(k&&r[k])?`${w}: ${r[k]}`:null;}).filter(Boolean).join(' | ');
+  }).join('\n');
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const msg=`[CMA_APPRAISER_V2]\nYou are a licensed real estate appraiser with 20+ years in the Greenville/Upstate SC market. Reason like a certified appraiser. Show your math.\n\nTODAY: ${today}\n\nSUBJECT:\nAddress: ${s.address}\nSq Ft: ${s.sqft||'not provided'}\nBeds/Baths: ${s.beds||'not provided'}\nYear Built: ${s.year||'not provided'}\nCondition: ${s.condition||'not provided'}\nLot: ${s.lot||'not provided'}\nGarage: ${s.garage||'not provided'}\nUpgrades: ${s.upgrades||'none'}\nNotes: ${s.notes||'none'}\n\nMLS COMPS (${parsedComps.length} total):\n${compText}\n\nSTEPS:\n1. COMP SCREENING — rate each HIGH/MEDIUM/LOW/DISCARD. Flag: DOM>90, sq ft gap >300, older than 6 months, different property type\n2. PRICE PER SQ FT — weighted avg from HIGH comps only using SOLD PRICE divided by Total Finished Sqft. Show math.\n3. ADJUSTMENT GRID — size: $65/100sqft difference | garage: $10K/space | full bath: $6K | condition/age: $5-15K | time: +0.75%/month for comps older than 3 months\n4. PRICE RANGE:\n   CONSERVATIVE: $___\n   TARGET: $___\n   AGGRESSIVE: $___\n5. SUGGESTED LIST PRICE — one specific number. 3-4 sentences showing exactly which comps support it.\n6. MARKET NOTES — DOM trends, list-to-sold ratios, red flags, strategic advice for the agent.\n\nUse SOLD PRICE only — never list price. Be precise. Show math. No padding.`;
+
+  // Fire request to Claude
+  sendPrompt(msg);
+
+  // Cycle loading messages + count up, then show result after 15s
+  const loadingMessages=[
+    'Sending comps to appraiser engine...',
+    'Screening comps — flagging outliers...',
+    'Calculating price per sq ft from sold prices...',
+    'Applying size, condition, and garage adjustments...',
+    'Reconciling value range from best comps...',
+    'Finalizing your CMA report...',
+  ];
+  let elapsed=0;
+  const timerInterval=setInterval(()=>{
+    elapsed++;
+    const el=document.getElementById('elapsed-time');
+    if(el) el.textContent=elapsed;
+    const msgEl=document.getElementById('loading-msg');
+    if(msgEl) msgEl.textContent=loadingMessages[Math.min(Math.floor(elapsed/3),loadingMessages.length-1)];
+    if(elapsed===25){
+      const sub=document.getElementById('loading-sub');
+      if(sub) sub.textContent='Taking a bit longer — scroll down in the chat to see if the report already appeared there.';
+    }
+    if(elapsed>=15){
+      clearInterval(timerInterval);
+      // Hide loading, show tabs + generate tab with result
+      document.getElementById('loading-state').style.display='none';
+      document.querySelector('.tool-tabs').style.display='flex';
+      document.querySelector('.tool-body').style.display='block';
+      // Switch to generate tab
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+      document.getElementById('tab-generate').classList.add('active');
+      document.querySelectorAll('.tool-tab')[4].classList.add('active');
+      // Show result, hide pre-gen
+      document.getElementById('pre-gen').style.display='none';
+      document.getElementById('result-area').style.display='block';
+    }
+  },1000);
+}
+
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  const W=215.9,M=15;
+  const ac=brandColor||'#0057FF';
+  const hexToRgb=h=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return[r,g,b]};
+  const [ar,ag,ab]=hexToRgb(ac);
+  let y=0;
+
+  // Header
+  doc.setFillColor(ar,ag,ab);doc.rect(0,0,W,38,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');doc.setFontSize(20);
+  doc.text('InstaCMA — Comparative Market Analysis',M,14);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  const agentName=document.getElementById('b-name').value||'Your Agent';
+  const agentTitle=document.getElementById('b-title').value||'';
+  const agentPhone=document.getElementById('b-phone').value||'';
+  const agentEmail=document.getElementById('b-email').value||'';
+  const agentCo=document.getElementById('b-co').value||'';
+  doc.text(`${agentName}${agentTitle?' | '+agentTitle:''}${agentCo?' | '+agentCo:''}`,M,22);
+  doc.text(`${agentPhone}${agentEmail?' | '+agentEmail:''}`,M,29);
+  doc.text(`Generated ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`,W-M,29,{align:'right'});
+  y=46;
+
+  // Subject
+  doc.setFillColor(245,247,250);doc.rect(M,y,W-2*M,32,'F');
+  doc.setTextColor(ar,ag,ab);doc.setFont('helvetica','bold');doc.setFontSize(9);
+  doc.text('SUBJECT PROPERTY',M+4,y+7);
+  doc.setTextColor(20,20,20);doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text(lastSubject.address||document.getElementById('s-addr').value||'',M+4,y+15);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  const details=`${lastSubject.sqft||'—'} sq ft  |  ${lastSubject.beds||'—'} bed/bath  |  Built ${lastSubject.year||'—'}  |  ${lastSubject.condition||'—'}  |  ${lastSubject.garage||'—'} garage  |  Lot: ${lastSubject.lot||'—'}`;
+  doc.text(details,M+4,y+22);
+  if(lastSubject.upgrades)doc.text('Upgrades: '+lastSubject.upgrades,M+4,y+29);
+  y+=38;
+
+  // Report text
+  doc.setTextColor(ar,ag,ab);doc.setFont('helvetica','bold');doc.setFontSize(9);
+  doc.text('APPRAISER ANALYSIS',M,y+5);y+=10;
+  doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  const reportText=document.getElementById('report-body').textContent;
+  const lines=doc.splitTextToSize(reportText,W-2*M);
+  const pageH=279;const bottomM=20;
+  lines.forEach(line=>{
+    if(y>pageH-bottomM){doc.addPage();y=20;}
+    doc.text(line,M,y);y+=4.5;
+  });
+
+  // Footer
+  if(y>pageH-20){doc.addPage();y=pageH-20;}
+  doc.setFillColor(ar,ag,ab);doc.rect(0,pageH-12,W,12,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+  doc.text('Generated by InstaCMA · instacma.com · For informational purposes only — not a certified appraisal.',W/2,pageH-5,{align:'center'});
+
+  const filename=`CMA_${(lastSubject.address||'Report').replace(/[^a-zA-Z0-9]/g,'_').slice(0,40)}.pdf`;
+  doc.save(filename);
+}
+
+function resetTool(){
+  document.getElementById('result-area').style.display='none';
+  document.getElementById('loading-state').style.display='none';
+  document.getElementById('pre-gen').style.display='block';
+  document.querySelector('.tool-tabs').style.display='flex';
+  document.querySelector('.tool-body').style.display='block';
+  switchTab('howto',document.querySelectorAll('.tool-tab')[0]);
+}
+</script>
+</body>
+</html>
