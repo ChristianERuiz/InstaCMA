@@ -488,12 +488,10 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
           <button class="run-btn" id="run-btn" onclick="runCMA()">Generate CMA Report ↗</button>
         </div>
         <div id="result-area" style="display:none">
-          <div style="background:rgba(0,200,83,.06);border:1px solid rgba(0,200,83,.25);border-radius:var(--r);padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem">
-            <div style="font-size:1.2rem">✅</div>
-            <div>
-              <div style="font-size:.875rem;font-weight:500;color:var(--ink)">CMA complete — scroll down in the chat to read the full report</div>
-              <div style="font-size:.78rem;color:var(--muted);margin-top:2px">Come back here to download your branded PDF once you've reviewed it.</div>
-            </div>
+          <div class="price-range-row" id="price-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem"></div>
+          <div style="background:var(--bg);border-radius:var(--r);padding:1.25rem;margin-bottom:1rem">
+            <div style="font-family:'Syne',sans-serif;font-size:.875rem;font-weight:700;margin-bottom:.75rem;color:var(--ink)">Full CMA Report</div>
+            <div id="report-body" style="font-size:.875rem;line-height:1.8;color:var(--ink2);white-space:pre-wrap;max-height:500px;overflow-y:auto"></div>
           </div>
           <div class="report-actions">
             <button class="dl-btn" onclick="downloadPDF()">⬇ Download branded PDF</button>
@@ -504,7 +502,7 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
 
     </div>
 
-    <!-- LOADING OVERLAY — lives outside tabs so always visible -->
+    <!-- LOADING OVERLAY — lives outside tabs so always visible when triggered -->
     <div id="loading-state" style="display:none;text-align:center;padding:2.5rem 1rem;border-top:1px solid var(--line)">
       <div style="margin-bottom:1.25rem"><div class="spinner"></div></div>
       <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:.5rem" id="loading-msg">Sending comps to appraiser engine...</div>
@@ -545,19 +543,51 @@ function setBar(msg,ok){
   b.className='status-bar '+(ok?'status-ok':'status-err');
 }
 
+function excelDateToString(val){
+  if(!val) return '';
+  const n=parseFloat(String(val).replace(/[^0-9.]/g,''));
+  // Excel serial dates are numbers > 40000 (year ~2009+)
+  if(n>40000&&n<60000){
+    const date=new Date((n-25569)*86400*1000);
+    return date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  return String(val);
+}
+
+function cleanRows(rows){
+  // Convert any Excel serial date columns to readable dates
+  if(!rows.length) return rows;
+  const keys=Object.keys(rows[0]);
+  const dateKeys=keys.filter(k=>/date|closing|close/i.test(k));
+  if(!dateKeys.length) return rows;
+  return rows.map(r=>{
+    const cleaned={...r};
+    dateKeys.forEach(k=>{
+      const v=cleaned[k];
+      if(v&&/^\d{5}$/.test(String(v).trim())){
+        cleaned[k]=excelDateToString(v);
+      }
+    });
+    return cleaned;
+  });
+}
+
 function handleFile(file){
   if(!file)return;
   const isCSV=file.name.toLowerCase().endsWith('.csv');
   const reader=new FileReader();
   reader.onload=function(e){
     try{
-      const wb=isCSV?XLSX.read(e.target.result,{type:'string'}):XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const wb=isCSV
+        ?XLSX.read(e.target.result,{type:'string',cellDates:true})
+        :XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
       if(!rows.length){setBar('No data found in file.',false);return;}
-      parsedComps=rows;
-      showFileLoaded(file.name,rows);
-      checkQuality(rows);
+      const cleaned=cleanRows(rows);
+      parsedComps=cleaned;
+      showFileLoaded(file.name,cleaned);
+      checkQuality(cleaned);
     }catch(err){setBar('Error: '+err.message,false);}
   };
   isCSV?reader.readAsText(file):reader.readAsArrayBuffer(file);
@@ -654,60 +684,70 @@ function runCMA(){
     garage:document.getElementById('s-garage').value,
     upgrades:document.getElementById('s-upgrades').value,notes:document.getElementById('s-notes').value
   };
-  lastSubject=s;
 
-  // Hide tabs + tool body, show loading overlay (which is outside the tab system)
+  // Hide tabs, show loading
   document.querySelector('.tool-tabs').style.display='none';
   document.querySelector('.tool-body').style.display='none';
   document.getElementById('loading-state').style.display='block';
 
-  const compText=parsedComps.slice(0,43).map((r,i)=>{
-    const keys=Object.keys(r);
-    const want=['Address','City','Sold Price','List Price','Sold Price Per SQFT','Total Finished Sqft','# BR','# FB','Days On Market','Closing Date','Approx Year Built','Subdivision','Garage Total Capacity','Lot Size/Acreage'];
-    return `Comp ${i+1}: `+want.map(w=>{const k=keys.find(k=>k.toLowerCase().includes(w.toLowerCase()));return(k&&r[k])?`${w}: ${r[k]}`:null;}).filter(Boolean).join(' | ');
-  }).join('\n');
-  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  const msg=`[CMA_APPRAISER_V2]\nYou are a licensed real estate appraiser with 20+ years in the Greenville/Upstate SC market. Reason like a certified appraiser. Show your math.\n\nTODAY: ${today}\n\nSUBJECT:\nAddress: ${s.address}\nSq Ft: ${s.sqft||'not provided'}\nBeds/Baths: ${s.beds||'not provided'}\nYear Built: ${s.year||'not provided'}\nCondition: ${s.condition||'not provided'}\nLot: ${s.lot||'not provided'}\nGarage: ${s.garage||'not provided'}\nUpgrades: ${s.upgrades||'none'}\nNotes: ${s.notes||'none'}\n\nMLS COMPS (${parsedComps.length} total):\n${compText}\n\nSTEPS:\n1. COMP SCREENING — rate each HIGH/MEDIUM/LOW/DISCARD. Flag: DOM>90, sq ft gap >300, older than 6 months, different property type\n2. PRICE PER SQ FT — weighted avg from HIGH comps only using SOLD PRICE divided by Total Finished Sqft. Show math.\n3. ADJUSTMENT GRID — size: $65/100sqft difference | garage: $10K/space | full bath: $6K | condition/age: $5-15K | time: +0.75%/month for comps older than 3 months\n4. PRICE RANGE:\n   CONSERVATIVE: $___\n   TARGET: $___\n   AGGRESSIVE: $___\n5. SUGGESTED LIST PRICE — one specific number. 3-4 sentences showing exactly which comps support it.\n6. MARKET NOTES — DOM trends, list-to-sold ratios, red flags, strategic advice for the agent.\n\nUse SOLD PRICE only — never list price. Be precise. Show math. No padding.`;
-
-  // Fire request to Claude
-  sendPrompt(msg);
-
-  // Cycle loading messages + count up, then show result after 15s
-  const loadingMessages=[
-    'Sending comps to appraiser engine...',
-    'Screening comps — flagging outliers...',
-    'Calculating price per sq ft from sold prices...',
-    'Applying size, condition, and garage adjustments...',
-    'Reconciling value range from best comps...',
-    'Finalizing your CMA report...',
-  ];
+  // Elapsed timer + cycling messages
+  const loadingMessages=['Sending comps to appraiser engine...','Screening comps — flagging outliers...','Calculating price per sq ft from sold prices...','Applying size, condition and garage adjustments...','Reconciling value range from best comps...','Finalizing your CMA report...'];
   let elapsed=0;
   const timerInterval=setInterval(()=>{
     elapsed++;
     const el=document.getElementById('elapsed-time');
     if(el) el.textContent=elapsed;
     const msgEl=document.getElementById('loading-msg');
-    if(msgEl) msgEl.textContent=loadingMessages[Math.min(Math.floor(elapsed/3),loadingMessages.length-1)];
-    if(elapsed===25){
-      const sub=document.getElementById('loading-sub');
-      if(sub) sub.textContent='Taking a bit longer — scroll down in the chat to see if the report already appeared there.';
-    }
-    if(elapsed>=15){
-      clearInterval(timerInterval);
-      // Hide loading, show tabs + generate tab with result
-      document.getElementById('loading-state').style.display='none';
-      document.querySelector('.tool-tabs').style.display='flex';
-      document.querySelector('.tool-body').style.display='block';
-      // Switch to generate tab
-      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-      document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
-      document.getElementById('tab-generate').classList.add('active');
-      document.querySelectorAll('.tool-tab')[4].classList.add('active');
-      // Show result, hide pre-gen
-      document.getElementById('pre-gen').style.display='none';
-      document.getElementById('result-area').style.display='block';
-    }
+    if(msgEl) msgEl.textContent=loadingMessages[Math.min(Math.floor(elapsed/5),loadingMessages.length-1)];
   },1000);
+
+  const compText=parsedComps.slice(0,43).map((r,i)=>{
+    const keys=Object.keys(r);
+    const want=['Address','City','Sold Price','List Price','Sold Price Per SQFT','Total Finished Sqft','# BR','# FB','Days On Market','Closing Date','Approx Year Built','Subdivision','Garage Total Capacity','Lot Size/Acreage'];
+    return `Comp ${i+1}: `+want.map(w=>{const k=keys.find(k=>k.toLowerCase().includes(w.toLowerCase()));return(k&&r[k])?`${w}: ${r[k]}`:null;}).filter(Boolean).join(' | ');
+  }).join('\n');
+
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const prompt=`You are a licensed real estate appraiser with 20+ years in the Greenville/Upstate SC market. Reason like a certified appraiser. Show your math.\n\nTODAY: ${today}\n\nSUBJECT:\nAddress: ${s.address}\nSq Ft: ${s.sqft||'not provided'}\nBeds/Baths: ${s.beds||'not provided'}\nYear Built: ${s.year||'not provided'}\nCondition: ${s.condition||'not provided'}\nLot: ${s.lot||'not provided'}\nGarage: ${s.garage||'not provided'}\nUpgrades: ${s.upgrades||'none'}\nNotes: ${s.notes||'none'}\n\nMLS COMPS (${parsedComps.length} total):\n${compText}\n\nSTEPS:\n1. COMP SCREENING — rate each HIGH/MEDIUM/LOW/DISCARD. Flag: DOM>90, sq ft gap >300, older 6 months, different type\n2. PRICE PER SQ FT — weighted avg from HIGH comps only. Show math.\n3. ADJUSTMENT GRID — size: $65/100sqft | garage: $10K/space | bath: $6K | condition: $5-15K | time: +0.75%/mo\n4. PRICE RANGE: CONSERVATIVE / TARGET / AGGRESSIVE\n5. SUGGESTED LIST PRICE — one number, 3-4 sentences justification\n6. MARKET NOTES — DOM trends, list-to-sold ratios, red flags\n\nUse SOLD PRICE only. Be precise. Show math. No padding.`;
+
+  function showResult(text, isError){
+    clearInterval(timerInterval);
+    lastReport=text;
+    document.getElementById('loading-state').style.display='none';
+    document.querySelector('.tool-tabs').style.display='flex';
+    document.querySelector('.tool-body').style.display='block';
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-generate').classList.add('active');
+    document.querySelectorAll('.tool-tab')[4].classList.add('active');
+    document.getElementById('pre-gen').style.display='none';
+    document.getElementById('result-area').style.display='block';
+    document.getElementById('report-body').textContent=text;
+    if(!isError){
+      const prices=[...text.matchAll(/\$([\d,]+)/g)].map(m=>parseInt(m[1].replace(/,/g,''))).filter(v=>v>50000);
+      const unique=[...new Set(prices)].slice(0,3);
+      const labels=['Conservative','Target','Aggressive'];
+      const colors=['var(--warn)','var(--accent)','var(--green)'];
+      document.getElementById('price-row').innerHTML=unique.map((p,i)=>`<div style="border-radius:var(--r);padding:1rem;text-align:center;background:var(--bg);border:1px solid var(--line)"><div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${colors[i]||'var(--accent)'}">$${p.toLocaleString()}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${labels[i]||'Price'}</div></div>`).join('');
+    }
+  }
+
+  fetch('/api/cma',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt:prompt})
+  })
+  .then(res=>{
+    if(!res.ok) return res.text().then(t=>{throw new Error('API '+res.status+': '+t.slice(0,150));});
+    return res.json();
+  })
+  .then(data=>{
+    const text=data.result||'No response received.';
+    showResult(text,false);
+  })
+  .catch(err=>{
+    showResult('Error: '+err.message+'\n\nPlease try again or contact hello@instacma.com',true);
+  });
 }
 
 function downloadPDF(){
