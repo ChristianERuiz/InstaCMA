@@ -316,14 +316,14 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
           <div style="display:flex;gap:1rem;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--accent)">
             <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent);flex-shrink:0;width:28px">1</div>
             <div>
-              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Set up your Paragon search</div>
+              <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.4rem">Set up your Paragon search by zip code</div>
               <p style="font-size:.875rem;color:var(--ink2);line-height:1.7;margin-bottom:.5rem">In Paragon, go to <strong>Search → Residential</strong>. Set the following criteria:</p>
               <ul style="font-size:.875rem;color:var(--ink2);line-height:1.9;padding-left:1.1rem">
                 <li><strong>Status:</strong> SLD (Sold)</li>
-                <li><strong>Search By Map:</strong> Draw a <strong>2-mile radius</strong> around the subject property address — the AI will prioritize closer comps automatically</li>
+                <li><strong>Zip Code:</strong> Enter the subject property's zip code — this pulls the right market automatically without guessing at radius or area codes</li>
                 <li><strong>General Date (Begin):</strong> Set to <strong>1 year back</strong> from today — leave End blank</li>
                 <li>Leave all other fields blank — let the AI filter the rest</li>
-                <li><strong>Tip for larger homes (2,000+ sq ft):</strong> Expand to a <strong>3-mile radius</strong> if the subject is bigger than most homes in the immediate neighborhood — the AI needs enough size-equivalent comps to price accurately</li>
+                <li><strong>Not enough comps? (fewer than 20 sold):</strong> Add a neighboring zip code to the search and re-export. The AI will flag any comps from a different market and exclude them automatically</li>
               </ul>
             </div>
           </div>
@@ -383,8 +383,8 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
 
           <!-- PRO TIP -->
           <div style="padding:1rem 1.1rem;background:rgba(0,87,255,.06);border:1px solid rgba(0,87,255,.15);border-radius:var(--r)">
-            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.35rem">💡 Pro tip — radius and data volume</div>
-            <p style="font-size:.84rem;color:var(--ink2);line-height:1.7">Start with a <strong>2-mile radius</strong> for most properties. For larger homes (2,000+ sq ft) or properties in areas with fewer resale comps, expand to <strong>3 miles</strong> — the AI will automatically prioritize the closest, most similar comps and flag anything too far or too different. More data always means better accuracy. The AI sorts it out — you just need to give it enough to work with.</p>
+            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.35rem">💡 Pro tip — why zip code beats radius</div>
+            <p style="font-size:.84rem;color:var(--ink2);line-height:1.7">Zip codes match how buyers actually think about neighborhoods. A radius circle can accidentally pull in homes from a completely different market — across a highway, in a different price tier, or in a rural vs. suburban setting. A zip code search keeps you in the right market automatically. If you get fewer than 20 comps, just add a neighboring zip and the AI will sort out which ones belong.</p>
           </div>
 
           <button class="run-btn" style="margin-top:1.25rem" onclick="switchTab('subject',document.querySelectorAll('.tool-tab')[1])">Got it — start my CMA →</button>
@@ -395,6 +395,8 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
       <div class="tab-panel" id="tab-subject">
         <div class="form-grid">
           <div class="form-group form-full"><label>Property address</label><input id="s-addr" type="text" placeholder="Street address, City, SC"/></div>
+          <div class="form-group"><label>Zip code</label><input id="s-zip" type="text" placeholder="e.g. 29316"/></div>
+          <div class="form-group"><label>Secondary zip code (optional)</label><input id="s-zip2" type="text" placeholder="Add if you need more comps"/></div>
           <div class="form-group"><label>Total finished sq ft (actual)</label><input id="s-sqft" type="number" placeholder="Confirmed sq ft"/></div>
           <div class="form-group"><label>Beds / full baths</label><input id="s-beds" type="text" placeholder="e.g. 3 / 2"/></div>
           <div class="form-group"><label>Year built</label><input id="s-year" type="number" placeholder="e.g. 2005"/></div>
@@ -516,7 +518,7 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
     <div id="loading-state" style="display:none;text-align:center;padding:2.5rem 1rem;border-top:1px solid var(--line)">
       <div style="margin-bottom:1.25rem"><div class="spinner"></div></div>
       <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:.5rem" id="loading-msg">Sending comps to appraiser engine...</div>
-      <div style="font-size:.82rem;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto" id="loading-sub">The AI is analyzing your comps, screening outliers, and calculating adjustments. This takes 15–30 seconds.</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto" id="loading-sub">The AI is analyzing your comps, screening outliers, and calculating adjustments. This takes 30–120 seconds depending on how many comps you uploaded.</div>
       <div style="margin-top:1.25rem;display:flex;justify-content:center;gap:.4rem">
         <div class="dot-pulse" style="animation-delay:0s"></div>
         <div class="dot-pulse" style="animation-delay:.2s"></div>
@@ -677,9 +679,11 @@ function updateSummary(){
   const beds=document.getElementById('s-beds').value||'—';
   const cond=document.getElementById('s-cond').value||'—';
   const effage=document.getElementById('s-effage').value||'—';
+  const zip=document.getElementById('s-zip').value||'—';
+  const zip2=document.getElementById('s-zip2').value||'';
   const agent=document.getElementById('b-name').value||'Not entered';
   document.getElementById('summary-disp').innerHTML=
-    `<b>Property:</b> ${addr}<br><b>Size:</b> ${sqft} sq ft &nbsp;|&nbsp; <b>Beds/Baths:</b> ${beds} &nbsp;|&nbsp; <b>Condition:</b> ${cond}<br><b>Effective Age:</b> ${effage}<br><b>Comps loaded:</b> ${parsedComps.length}<br><b>Agent:</b> ${agent}`;
+    `<b>Property:</b> ${addr}<br><b>Zip Code:</b> ${zip}${zip2?' + '+zip2:''}<br><b>Size:</b> ${sqft} sq ft &nbsp;|&nbsp; <b>Beds/Baths:</b> ${beds} &nbsp;|&nbsp; <b>Condition:</b> ${cond}<br><b>Effective Age:</b> ${effage}<br><b>Comps loaded:</b> ${parsedComps.length}<br><b>Agent:</b> ${agent}`;
 }
 
 function runCMA(){
@@ -706,6 +710,8 @@ function runCMA(){
     lot:document.getElementById('s-lot').value,
     garage:document.getElementById('s-garage').value,
     carport:carport,
+    zip:document.getElementById('s-zip').value||'',
+    zip2:document.getElementById('s-zip2').value||'',
     upgrades:document.getElementById('s-upgrades').value,
     notes:document.getElementById('s-notes').value
   };
@@ -753,6 +759,7 @@ TODAY: ${today}
 
 SUBJECT:
 Address: ${s.address}
+Zip Code: ${s.zip||'not provided'}${s.zip2?' (secondary zip: '+s.zip2+')':''}
 Sq Ft: ${s.sqft||'not provided'}
 Beds/Baths: ${s.beds||'not provided'}
 Year Built: ${s.year||'not provided'}
@@ -763,6 +770,8 @@ Garage: ${s.garage||'not provided'} garage spaces
 Carport: ${s.carport||'none'}
 Upgrades: ${s.upgrades||'none'}
 Notes: ${s.notes||'none'}
+
+ZIP CODE GUARDRAIL: The subject property is in zip code ${s.zip||'unknown'}${s.zip2?' or '+s.zip2:''}. Any comp from a different zip code must be flagged in your screening. You may still use out-of-zip comps if they are the best available size or condition match — but you must note the zip mismatch and explain why you used them. Never use an out-of-zip comp when a comparable in-zip comp exists.
 
 ${effAgeInstruction}
 
