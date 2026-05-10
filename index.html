@@ -775,6 +775,16 @@ ${compText}
 
 STEPS:
 1. COMP SCREENING — rate each HIGH/MEDIUM/LOW/DISCARD. Mandatory flags:
+
+   PRICE TIER PRE-FILTER — RUN THIS FIRST BEFORE ANY OTHER SCREENING:
+   Before rating any comp, estimate the subject's expected value range using this logic:
+   - Take the subject's sq ft × $120/SF as a baseline floor (conservative minimum)
+   - Adjust the floor UP by: +10% if condition is Good/Updated, +20% if Fully Renovated or Near-New
+   - Any comp that sold for less than 60% of this adjusted floor must be immediately DISCARDED — do not rate it, do not adjust it, do not reference it in the grid. It is from a different market tier and cannot be reconciled to the subject regardless of proximity or size.
+   - State the calculated floor price at the top of your screening section so the reasoning is transparent.
+   Example: Subject is 2,157 SF, Good/Updated. Floor = 2,157 × $120 × 1.10 = $284,724. 60% of floor = $170,834. Any comp under $170,834 is discarded before screening begins.
+
+   REMAINING SCREENING FLAGS (applied after price tier pre-filter):
    - New construction vs resale mismatch (apply new construction filter above)
    - DOM > 90 days
    - Sq ft gap > 300 SF from subject (flag but do not auto-discard if no better options exist — apply size adjustment and note the gap)
