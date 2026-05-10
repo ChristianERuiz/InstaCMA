@@ -320,9 +320,10 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
               <p style="font-size:.875rem;color:var(--ink2);line-height:1.7;margin-bottom:.5rem">In Paragon, go to <strong>Search → Residential</strong>. Set the following criteria:</p>
               <ul style="font-size:.875rem;color:var(--ink2);line-height:1.9;padding-left:1.1rem">
                 <li><strong>Status:</strong> SLD (Sold)</li>
-                <li><strong>Search By Map:</strong> Draw a <strong>1-mile radius</strong> around the subject property address</li>
+                <li><strong>Search By Map:</strong> Draw a <strong>2-mile radius</strong> around the subject property address — the AI will prioritize closer comps automatically</li>
                 <li><strong>General Date (Begin):</strong> Set to <strong>1 year back</strong> from today — leave End blank</li>
                 <li>Leave all other fields blank — let the AI filter the rest</li>
+                <li><strong>Tip for larger homes (2,000+ sq ft):</strong> Expand to a <strong>3-mile radius</strong> if the subject is bigger than most homes in the immediate neighborhood — the AI needs enough size-equivalent comps to price accurately</li>
               </ul>
             </div>
           </div>
@@ -382,8 +383,8 @@ footer strong{color:var(--ink);font-family:'Syne',sans-serif}
 
           <!-- PRO TIP -->
           <div style="padding:1rem 1.1rem;background:rgba(0,87,255,.06);border:1px solid rgba(0,87,255,.15);border-radius:var(--r)">
-            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.35rem">💡 Pro tip — why 1 year?</div>
-            <p style="font-size:.84rem;color:var(--ink2);line-height:1.7">Use a 1-year lookback and let the AI sort it out. The robot automatically flags comps older than 6 months and applies time adjustments — but having that older data available is better than having too few comps. More data = better accuracy.</p>
+            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.35rem">💡 Pro tip — radius and data volume</div>
+            <p style="font-size:.84rem;color:var(--ink2);line-height:1.7">Start with a <strong>2-mile radius</strong> for most properties. For larger homes (2,000+ sq ft) or properties in areas with fewer resale comps, expand to <strong>3 miles</strong> — the AI will automatically prioritize the closest, most similar comps and flag anything too far or too different. More data always means better accuracy. The AI sorts it out — you just need to give it enough to work with.</p>
           </div>
 
           <button class="run-btn" style="margin-top:1.25rem" onclick="switchTab('subject',document.querySelectorAll('.tool-tab')[1])">Got it — start my CMA →</button>
@@ -776,10 +777,13 @@ STEPS:
 1. COMP SCREENING — rate each HIGH/MEDIUM/LOW/DISCARD. Mandatory flags:
    - New construction vs resale mismatch (apply new construction filter above)
    - DOM > 90 days
-   - Sq ft gap > 300 SF from subject
+   - Sq ft gap > 300 SF from subject (flag but do not auto-discard if no better options exist — apply size adjustment and note the gap)
    - Sale older than 6 months (flag, do not automatically discard — apply time adjustment)
-   - Different city or county than subject
+   - Different city or county than subject (flag — may still use if no closer equivalent exists, but note the location difference)
    - Condition mismatch (distressed vs updated)
+   - PROXIMITY PREFERENCE: Always prefer comps within 2 miles over comps 2-3 miles away, and prefer comps within 3 miles over anything farther. If a comp is beyond 3 miles, it must be flagged and justified — only use it if nothing closer is a reasonable match.
+   - NEIGHBORHOOD TYPE GUARDRAIL: Never use a comp from a fundamentally different neighborhood type even if it is geographically close. A rural property on acreage is not comparable to a suburban subdivision home. A downtown urban property is not comparable to a bedroom community resale. Flag and discard any comp where the neighborhood character, density, or land use type is clearly different from the subject — regardless of distance.
+   - SIZE BRACKETING PRIORITY: For the adjustment grid, always try to bracket the subject's sq ft with at least one comp above and one comp below in size. If the available HIGH comps are all smaller than the subject, note this explicitly and apply conservative size adjustments. Do not let a pool of undersized comps pull the value down without flagging it.
 
 2. EFFECTIVE AGE ANALYSIS — before pricing, state the subject's effective age and explain how it affects comp selection. If the subject has been renovated, identify which comps are most comparable on an effective-age basis.
 
