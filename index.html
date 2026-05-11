@@ -812,6 +812,11 @@ STEPS:
 4. ADJUSTMENT GRID — size: $65/100sqft | garage: $10K/space (enclosed garage only) | carport: $4K/space | bath: $6K | condition: $5-15K | time: +0.75%/mo
 
 5. PRICE RANGE: CONSERVATIVE / TARGET / AGGRESSIVE
+   You MUST output the three prices in this exact format on their own lines so the system can extract them:
+   CONSERVATIVE_PRICE: $000,000
+   TARGET_PRICE: $000,000
+   AGGRESSIVE_PRICE: $000,000
+   Then follow with your narrative explanation of each range.
 
 6. SUGGESTED LIST PRICE — one number, 3-4 sentences justification
 
@@ -849,11 +854,36 @@ Use SOLD PRICE only. Be precise. Show math. No padding.`;
     rb.style.whiteSpace='normal';
     rb.innerHTML=isError?`<div style="color:var(--danger)">${text}</div>`:renderMarkdown(text);
     if(!isError){
-      const prices=[...text.matchAll(/\$([\d,]+)/g)].map(m=>parseInt(m[1].replace(/,/g,''))).filter(v=>v>50000);
-      const unique=[...new Set(prices)].slice(0,3);
-      const labels=['Conservative','Target','Aggressive'];
-      const colors=['var(--warn)','var(--accent)','var(--green)'];
-      document.getElementById('price-row').innerHTML=unique.map((p,i)=>`<div style="border-radius:var(--r);padding:1rem;text-align:center;background:var(--bg);border:1px solid var(--line)"><div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${colors[i]||'var(--accent)'}">$${p.toLocaleString()}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${labels[i]||'Price'}</div></div>`).join('');
+      // Extract prices from structured tags the AI is required to output
+      const conservativeMatch = text.match(/CONSERVATIVE_PRICE:\s*\$?([\d,]+)/i);
+      const targetMatch = text.match(/TARGET_PRICE:\s*\$?([\d,]+)/i);
+      const aggressiveMatch = text.match(/AGGRESSIVE_PRICE:\s*\$?([\d,]+)/i);
+
+      const conservative = conservativeMatch ? parseInt(conservativeMatch[1].replace(/,/g,'')) : null;
+      const target = targetMatch ? parseInt(targetMatch[1].replace(/,/g,'')) : null;
+      const aggressive = aggressiveMatch ? parseInt(aggressiveMatch[1].replace(/,/g,'')) : null;
+
+      const priceData = [
+        {val: conservative, label: 'Conservative', color: 'var(--warn)'},
+        {val: target, label: 'Target', color: 'var(--accent)'},
+        {val: aggressive, label: 'Aggressive', color: 'var(--green)'}
+      ].filter(p => p.val && p.val > 50000);
+
+      if(priceData.length >= 2){
+        document.getElementById('price-row').innerHTML = priceData.map(p =>
+          `<div style="border-radius:var(--r);padding:1rem;text-align:center;background:var(--bg);border:1px solid var(--line)">
+            <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${p.color}">$${p.val.toLocaleString()}</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:3px">${p.label}</div>
+          </div>`
+        ).join('');
+      } else {
+        // Fallback: scan for largest dollar amounts in the report if tags not found
+        const prices=[...text.matchAll(/\$([\d,]+)/g)].map(m=>parseInt(m[1].replace(/,/g,''))).filter(v=>v>80000).sort((a,b)=>b-a);
+        const unique=[...new Set(prices)].slice(0,3).sort((a,b)=>a-b);
+        const labels=['Conservative','Target','Aggressive'];
+        const colors=['var(--warn)','var(--accent)','var(--green)'];
+        document.getElementById('price-row').innerHTML=unique.map((p,i)=>`<div style="border-radius:var(--r);padding:1rem;text-align:center;background:var(--bg);border:1px solid var(--line)"><div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${colors[i]||'var(--accent)'}">$${p.toLocaleString()}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${labels[i]||'Price'}</div></div>`).join('');
+      }
     }
   }
 
